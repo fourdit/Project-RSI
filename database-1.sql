@@ -88,16 +88,3 @@ CREATE TABLE `personal_access_tokens` (
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
----
-
-## 🖼️ 9. ASSETS & IMAGES
-
-### Struktur folder untuk images:
-```
-public/
-└── images/
-    ├── logo-zenergy.png       (Logo ZENERGY)
-    ├── bg-auth.jpg           (Background untuk login/register)
-    └── default-profile.jpg    (Foto profil default)
