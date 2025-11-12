@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -38,15 +37,14 @@ class RegisterController extends Controller
                 ->withInput();
         }
 
-        $user = User::create([
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        Auth::login($user);
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Registrasi berhasil! Selamat datang di ZENERGY');
+        // Redirect ke login dengan pesan sukses
+        return redirect()->route('login')
+            ->with('success', 'Registrasi berhasil! Silakan login dengan akun Anda.');
     }
 }
