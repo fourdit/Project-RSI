@@ -32,10 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     
-    // Electricity Notes
+    // Electricity Notes - CRUD Lengkap
     Route::get('/electricity-notes', [ElectricityNoteController::class, 'index'])->name('electricity-notes.index');
     Route::get('/electricity-notes/create', [ElectricityNoteController::class, 'create'])->name('electricity-notes.create');
     Route::post('/electricity-notes', [ElectricityNoteController::class, 'store'])->name('electricity-notes.store');
+    Route::get('/electricity-notes/{id}/edit', [ElectricityNoteController::class, 'edit'])->name('electricity-notes.edit');
+    Route::put('/electricity-notes/{id}', [ElectricityNoteController::class, 'update'])->name('electricity-notes.update');
+    Route::delete('/electricity-notes/{id}', [ElectricityNoteController::class, 'destroy'])->name('electricity-notes.destroy');
     
     // Placeholder routes untuk fitur lain
     Route::get('/badge', function () {

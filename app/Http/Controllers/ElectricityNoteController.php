@@ -99,7 +99,7 @@ class ElectricityNoteController extends Controller
                 'date' => $request->date,
                 'price_per_kwh' => $request->price_per_kwh,
                 'house_power' => $request->house_power,
-                'total_cost' => 0, // akan diupdate setelah hitung items
+                'total_cost' => 0,
             ]);
 
             // Simpan items dan hitung total biaya
@@ -134,6 +134,101 @@ class ElectricityNoteController extends Controller
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    public function edit($id)
+    {
+        $note = ElectricityNote::with('items')->where('user_id', Auth::id())->findOrFail($id);
+        return view('electricity.edit', compact('note'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $note = ElectricityNote::where('user_id', Auth::id())->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|date',
+            'price_per_kwh' => 'required|numeric|min:0',
+            'house_power' => 'required|integer|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.appliance_name' => 'required|string',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.duration_hours' => 'required|integer|min:0|max:23',
+            'items.*.duration_minutes' => 'required|integer|min:0|max:59',
+            'items.*.wattage' => 'required|integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            $totalCost = 0;
+
+            // Update catatan utama
+            $note->update([
+                'date' => $request->date,
+                'price_per_kwh' => $request->price_per_kwh,
+                'house_power' => $request->house_power,
+            ]);
+
+            // Hapus items lama
+            $note->items()->delete();
+
+            // Simpan items baru
+            foreach ($request->items as $item) {
+                $hours = $item['duration_hours'] + ($item['duration_minutes'] / 60);
+                $kwh = ($item['wattage'] * $item['quantity'] * $hours) / 1000;
+                $cost = $kwh * $request->price_per_kwh;
+                
+                ElectricityItem::create([
+                    'note_id' => $note->id,
+                    'appliance_name' => $item['appliance_name'],
+                    'quantity' => $item['quantity'],
+                    'duration_hours' => $item['duration_hours'],
+                    'duration_minutes' => $item['duration_minutes'],
+                    'wattage' => $item['wattage'],
+                    'cost' => $cost,
+                ]);
+
+                $totalCost += $cost;
+            }
+
+            // Update total cost
+            $note->update(['total_cost' => $totalCost]);
+
+            DB::commit();
+
+            return redirect()->route('electricity-notes.index')
+                ->with('success', 'Catatan listrik berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function destroy($id)
+    {
+        $note = ElectricityNote::where('user_id', Auth::id())->findOrFail($id);
+        
+        DB::beginTransaction();
+        try {
+            $note->delete();
+            DB::commit();
+            
+            return redirect()->route('electricity-notes.index')
+                ->with('success', 'Catatan listrik berhasil dihapus!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }
